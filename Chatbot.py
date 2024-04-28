@@ -386,7 +386,7 @@ if prompt:
                 with col15:
                     st.markdown(''':rainbow[tweet content]''')
                 with col16:
-                    st.markdown(''':rainbow[kol tweet summrize result]''')
+                    st.markdown(''':rainbow[tweet summrize result]''')
 
             
             with display_container:
