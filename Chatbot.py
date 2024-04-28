@@ -1,5 +1,8 @@
 
+import os
 import uuid
+from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 import streamlit as st
 import tiktoken
 from langchain_community.callbacks import get_openai_callback
@@ -10,6 +13,12 @@ import datetime
 from datetime import timedelta
 from streamlit_tags import st_tags, st_tags_sidebar
 
+from param_summarize_tweet import summarize_tweet_text
+
+os.environ["LANGCHAIN_TRACING_V2"] = 'true'
+os.environ["LANGCHAIN_ENDPOINT"] = 'https://api.smith.langchain.com'
+os.environ["LANGCHAIN_PROJECT"] = st.secrets["LANGCHAIN_PROJECT"]
+os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
 
 hide_st_style="""
 <style>
@@ -87,6 +96,13 @@ def get_all_twitter():
 
 with st.sidebar:
 
+    selected_option = st.selectbox('请选择一个公司', ['anthropic', 'openai'])
+    if selected_option == 'anthropic':
+        model_selected_option = st.selectbox('请选择一个模型', ['claude-3-opus-20240229', 'claude-3-sonnet-20240229','claude-3-haiku-20240307'])
+    else:
+        model_selected_option = st.selectbox('请选择一个模型', ['gpt-4-0125-preview', 'gpt-4-turbo','gpt-3.5-turbo-0125'])
+    custom_openai_api_key = st.text_input("API Key", key="chatbot_api_key", type="password")
+
     if 'selected_projects' not in st.session_state:
         st.session_state['selected_projects'] = []
 
@@ -152,6 +168,14 @@ with st.sidebar:
     'Please select one or more fields',
     ['author','timestamp','source link','tweet content'],
     )
+
+if custom_openai_api_key:
+    if selected_option=='anthropic':
+        chat = ChatAnthropic(
+            anthropic_api_key=custom_openai_api_key,model_name=model_selected_option)
+    else:
+        chat = ChatOpenAI(openai_api_key=custom_openai_api_key, model_name=model_selected_option)
+        
 
 def contains_any_efficient(string, char_list):
     """检查字符串是否包含列表中的任一字符或子字符串"""
@@ -269,33 +293,57 @@ def num_tokens_from_string(string: str, encoding_name: str) -> int:
     return num_tokens
 def truncate_string(input_string):
     # 检查字符串长度
-    if len(input_string) > 10000:
+    if len(input_string) > 50000:
         # 如果超过10000，则截取前10000个字符并加上...
-        return input_string[:10000] + '...'
+        return input_string[:20000] + '...'
     else:
         # 如果没有超过，返回原字符串
         return input_string
     
 st.title("💬 generate prompt")
+display_container0 = st.empty()
 display_container = st.empty()
 display_container2 = st.empty()
 display_container3 = st.empty()
 if 'last_content' not in st.session_state:
     st.session_state['last_content'] = ''
+if 'kol_tweet_output' not in st.session_state:
+    st.session_state['kol_tweet_output'] = ''
 if st.session_state.last_content:
     token_num = num_tokens_from_string(st.session_state.last_content, "cl100k_base")
     export_file_name = str(uuid.uuid4())+"_twitter.txt"
-    with display_container:
-        with st.container(height=500):
-            st.text(truncate_string(st.session_state.last_content))
+    export_file_name2 = str(uuid.uuid4())+"_twitter.txt"
+    with display_container0:
+        col13, col12 = st.columns(2)
+        with col13:
+            st.markdown(''':rainbow[tweet content]''')
+        with col12:
+            st.markdown(''':rainbow[tweet summrize result]''')
 
+    with display_container:
+        col6, col7 = st.columns(2)
+        with col6:
+            with st.container(height=500):
+                st.code(truncate_string(st.session_state.last_content))
+        with col7:
+            with st.container(height=500):
+                st.code(st.session_state.kol_tweet_output)
     with display_container2:
-        st.download_button(
-            label="export",
-            data=st.session_state.last_content,
-            file_name=export_file_name,
-            mime="text/plain"
-        )
+        col3, col4 = st.columns(2)
+        with col3:
+            st.download_button(
+                label="export",
+                data=st.session_state.last_content,
+                file_name=export_file_name,
+                mime="text/plain"
+            )
+        with col4:
+            st.download_button(
+                label="export",
+                data=st.session_state.kol_tweet_output,
+                file_name=export_file_name2,
+                mime="text/plain"
+            )
     with display_container3:
         st.write('token length = '+ str(token_num))
 
@@ -308,35 +356,66 @@ if prompt:
     if not options:
         st.info("please select twitter.")
         st.stop()
+    if not custom_openai_api_key :
+        st.info("Please add your OpenAI API key ")
+        st.stop()
     delta = abs(end_datetime - start_datetime)
     
     if delta <= timedelta(days=3) :
         
         with st.spinner("processing..."):
             data = get_tweet_by_time()
+            total_result = summarize_tweet_text(data,prompt,chat)
+            if total_result:
+                st.session_state['kol_tweet_output'] = total_result
+
             content = 'no data'
             # 根据twitter 和 日期查询推文
             # with st.container(height=500):
             if data:
-                content = prompt+'\n'+data
+                content = data
                 # st.session_state['last_content'] = ''
                 display_container.empty()
             st.session_state['last_content'] = content
             token_num = num_tokens_from_string(content, "cl100k_base")
             export_file_name = str(uuid.uuid4())+"_twitter.txt"
+            export_file_name2 = str(uuid.uuid4())+"_twitter.txt"
             # display_container.empty()
+            with display_container0:
+                col15, col16 = st.columns(2)
+                with col15:
+                    st.markdown(''':rainbow[tweet content]''')
+                with col16:
+                    st.markdown(''':rainbow[kol tweet summrize result]''')
 
+            
             with display_container:
-                with st.container(height=500):
-                    st.text(truncate_string(content))
+                col8, col9 = st.columns(2)
+                with col8:
+                    with st.container(height=500):
+                        st.code(truncate_string(content))
+                with col9:
+                    with st.container(height=500):
+                        st.code(total_result)
+
             with display_container2:
-                if content:
-                    st.download_button(
-                        label="export",
-                        data=content,
-                        file_name=export_file_name,
-                        mime="text/plain"
-                    )
+                col10, col11 = st.columns(2)
+                with col10:
+                    if content:
+                        st.download_button(
+                            label="export",
+                            data=content,
+                            file_name=export_file_name,
+                            mime="text/plain"
+                        )
+                with col11:
+                    if content:
+                        st.download_button(
+                            label="export",
+                            data=total_result,
+                            file_name=export_file_name2,
+                            mime="text/plain"
+                        )                
             with display_container3:
                 st.write('token length = '+ str(token_num))
 
