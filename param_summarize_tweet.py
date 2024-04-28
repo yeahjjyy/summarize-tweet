@@ -147,7 +147,7 @@ def summarize_tweet_text(tweets_text:str,prompt:str,chat):
             # 多线程处理
             with ThreadPoolExecutor(max_workers=len(tweets_list)) as executor:
                 for tw in tweets_list:
-                    future = executor.submit(summarize_every_kol_tweets, tw,prompt)
+                    future = executor.submit(summarize_every_kol_tweets, tw,prompt,chat)
                     futures.append(future)
                 start_time = time.time()
                 for fu in as_completed(futures):
