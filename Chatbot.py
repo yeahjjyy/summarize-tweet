@@ -33,7 +33,6 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
-
     )
 
     return engine
@@ -185,9 +184,15 @@ if custom_openai_api_key:
         
 
 def contains_any_efficient(string, char_list):
-    """检查字符串是否包含列表中的任一字符或子字符串"""
+    """检查字符串是否包含列表中的任一字符或子字符串（不区分大小写）"""
+    # 将字符串转换为小写，以便不区分大小写进行比较
+    string_lower = string.lower()
+    # 遍历列表中的每个字符或子字符串
     for item in char_list:
-        if item in string:
+        # 将列表中的字符或子字符串转换为小写，以便不区分大小写进行比较
+        item_lower = item.lower()
+        # 检查小写形式的字符串是否在小写形式的原始字符串中
+        if item_lower in string_lower:
             return True
     return False
 
