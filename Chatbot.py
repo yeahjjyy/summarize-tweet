@@ -187,7 +187,7 @@ if custom_openai_api_key:
 def contains_any_efficient(string, char_list):
     """检查字符串是否包含列表中的任一字符或子字符串"""
     for item in char_list:
-        if item.lower() in string.lower():
+        if item in string:
             return True
     return False
 
