@@ -13,7 +13,7 @@ import datetime
 from datetime import timedelta
 from streamlit_tags import st_tags, st_tags_sidebar
 
-from param_summarize_tweet import summarize_tweet_text
+from param_summarize_tweet import summarize_every_kol_tweets, summarize_tweet_text
 
 os.environ["LANGCHAIN_TRACING_V2"] = 'true'
 os.environ["LANGCHAIN_ENDPOINT"] = 'https://api.smith.langchain.com'
@@ -34,7 +34,9 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
+
     )
+
     return engine
 
 # @st.cache_data(ttl=60)
@@ -60,9 +62,9 @@ def get_twitter(project_name_list):
                                 )
     query_project_twitter = select(twitter_base_influencers.c.twitter_username).where(twitter_base_influencers.c.project_name_array.op('&&')(project_name_list))
     with engine.connect() as conn:
-        if project_name_list and 'all' in project_name_list:
+        if project_name_list and 'daliy_twitter' in project_name_list:
             # query_twitter = select(twitter_base_content.c.influencer_id).group_by(twitter_base_content.c.influencer_id)
-            project_name_list = ['daliy_twitter']
+            project_name_list = ['daliy_twitter','xinsight']
             query_project_twitter = select(twitter_base_influencers.c.twitter_username).where(twitter_base_influencers.c.project_name_array.op('&&')(project_name_list))
 
             result = conn.execute(query_project_twitter)
@@ -93,6 +95,11 @@ def get_all_twitter():
     
     return get_twitter(st.session_state.selected_projects)
 
+
+
+
+
+    
 
 with st.sidebar:
 
@@ -168,6 +175,7 @@ with st.sidebar:
     'Please select one or more fields',
     ['author','timestamp','source link','tweet content'],
     )
+
 
 if custom_openai_api_key:
     if selected_option=='anthropic':
@@ -254,7 +262,11 @@ tweet content: {row[2]} {row[4]}
 
 
 
-def get_tweet_by_time():
+def get_tweet_by_time(is_continue):
+    
+    if is_continue:
+        return
+
     total_text = ''
     engine = get_engine()
 
@@ -303,122 +315,198 @@ def truncate_string(input_string):
 st.title("💬 generate prompt")
 display_container0 = st.empty()
 display_container = st.empty()
+display_container4 = st.empty()
 display_container2 = st.empty()
 display_container3 = st.empty()
+
+
+
+
+
+def button_click2():
+    is_continue = None
+    try:
+        if not end_datetime or not start_datetime:
+            is_continue = "please select start_time and end_time."
+        elif not project_options:
+            is_continue = "please select project."
+        elif not options:
+            is_continue = "please select twitter."
+        
+        elif abs(end_datetime - start_datetime) > timedelta(days=3) :
+            is_continue = "The date interval is more than 3 days."
+
+    except NameError as e:
+        is_continue = "please select start_time and end_time."
+    data = get_tweet_by_time(is_continue)
+
+    content = 'no data'
+    # 根据twitter 和 日期查询推文
+    # with st.container(height=500):
+    if is_continue:
+        content= is_continue
+        display_container.empty()
+
+    elif data:
+        content = data
+        display_container.empty()
+    st.session_state['last_content'] = content
+
+
+
+
+def prompt_summit():
+    if not custom_openai_api_key :
+        st.session_state["kol_tweet_output"]="Please add your OpenAI API key "
+    else:
+        with st.spinner("processing..."):
+            # data = get_tweet_by_time(None)
+            if st.session_state.last_content and len(st.session_state.last_content) > 200:
+                total_result = summarize_tweet_text(st.session_state.last_content,st.session_state.prompt,chat)
+                print('total_result=',total_result)
+                if total_result:
+                    st.session_state['kol_tweet_output'] = total_result
+                else:
+                    st.session_state['kol_tweet_output'] = 'no data'
+
+
+def final_prompt_summit():
+
+    final_result = summarize_every_kol_tweets(st.session_state.kol_tweet_output,st.session_state.final_prompt,chat)
+    if not final_result or not final_result[0]:
+        st.session_state['final_kol_tweet_output'] = 'no data'
+    else:
+        st.session_state['final_kol_tweet_output'] = final_result[1]
+
+
 if 'last_content' not in st.session_state:
     st.session_state['last_content'] = ''
 if 'kol_tweet_output' not in st.session_state:
     st.session_state['kol_tweet_output'] = ''
-if st.session_state.last_content:
-    token_num = num_tokens_from_string(st.session_state.last_content, "cl100k_base")
-    export_file_name = str(uuid.uuid4())+"_twitter.txt"
-    export_file_name2 = str(uuid.uuid4())+"_twitter.txt"
-    with display_container0:
+if 'final_kol_tweet_output' not in st.session_state:
+    st.session_state['final_kol_tweet_output'] = ''
+# if st.session_state.last_content:
+token_num = num_tokens_from_string(st.session_state.last_content, "cl100k_base")
+export_file_name = str(uuid.uuid4())+"_twitter.txt"
+export_file_name2 = str(uuid.uuid4())+"_twitter.txt"
+export_file_name3 = str(uuid.uuid4())+"_twitter.txt"
+with display_container0:
+
+    if not st.session_state.last_content or len(st.session_state.last_content) < 100:
+        
+        st.markdown(''':rainbow[tweet content]''')
+    elif st.session_state.last_content and len(st.session_state.last_content) >= 100 and (not st.session_state.kol_tweet_output or len(st.session_state.kol_tweet_output) < 50):
         col13, col12 = st.columns(2)
         with col13:
             st.markdown(''':rainbow[tweet content]''')
         with col12:
             st.markdown(''':rainbow[tweet summrize result]''')
+    elif st.session_state.kol_tweet_output and len(st.session_state.kol_tweet_output) > 50:
+        col13, col12,col66 = st.columns(3)
+        with col13:
+            st.markdown(''':rainbow[tweet content]''')
+        with col12:
+            st.markdown(''':rainbow[tweet summrize result]''')
+        with col66:
+            st.markdown(''':rainbow[final tweet summrize result]''')
+with display_container:
+    if not st.session_state.last_content or len(st.session_state.last_content) < 100:
 
-    with display_container:
-        col6, col7 = st.columns(2)
+        with st.container(height=500):
+            st.code(truncate_string(st.session_state.last_content))
+    elif st.session_state.last_content and len(st.session_state.last_content) >= 100 and (not st.session_state.kol_tweet_output or len(st.session_state.kol_tweet_output) < 50):
+        col6,col7 = st.columns(2)
+    
         with col6:
             with st.container(height=500):
                 st.code(truncate_string(st.session_state.last_content))
         with col7:
             with st.container(height=500):
                 st.code(st.session_state.kol_tweet_output)
-    with display_container2:
+    elif st.session_state.kol_tweet_output and len(st.session_state.kol_tweet_output) > 50:
+        col6,col7,col31 = st.columns(3)
+        with col6:
+            with st.container(height=500):
+                st.code(truncate_string(st.session_state.last_content))
+        with col7:
+            with st.container(height=500):
+                st.code(st.session_state.kol_tweet_output)
+        with col31:
+            with st.container(height=500):
+                st.code(st.session_state.final_kol_tweet_output)
+with display_container4:
+
+    if not st.session_state.last_content and len(st.session_state.last_content) < 100:
+        st.button("get tweet data", type="primary", on_click=button_click2)
+    elif st.session_state.last_content and len(st.session_state.last_content) > 100 and (not st.session_state.kol_tweet_output or len(st.session_state.kol_tweet_output) <= 50):
+        col20, col21 = st.columns(2)
+        with col20:
+            st.button("get tweet data", type="primary", on_click=button_click2)
+        with col21:
+            st.chat_input(placeholder="please input prompt",on_submit=prompt_summit,key="prompt")
+    elif st.session_state.kol_tweet_output and len(st.session_state.kol_tweet_output)>50:
+        col20, col21,col23 = st.columns(3)
+        with col20:
+            st.button("get tweet data", type="primary", on_click=button_click2)
+        with col21:
+            st.chat_input(placeholder="please input prompt",on_submit=prompt_summit,key="prompt")
+        with col23:
+            st.chat_input(placeholder="please input prompt",on_submit=final_prompt_summit,key="final_prompt")
+with display_container2:
+    
+    if not st.session_state.last_content or len(st.session_state.last_content) < 100:
+        
+        st.download_button(
+            label="export",
+            data=st.session_state.last_content,
+            file_name=export_file_name,
+            mime="text/plain"
+        )
+    elif st.session_state.last_content and len(st.session_state.last_content) >= 100 and (not st.session_state.kol_tweet_output or len(st.session_state.kol_tweet_output) < 50):
         col3, col4 = st.columns(2)
-        with col3:
-            st.download_button(
-                label="export",
-                data=st.session_state.last_content,
-                file_name=export_file_name,
-                mime="text/plain"
-            )
-        with col4:
-            st.download_button(
-                label="export",
-                data=st.session_state.kol_tweet_output,
-                file_name=export_file_name2,
-                mime="text/plain"
-            )
+        if st.session_state.last_content:
+            with col3:
+                st.download_button(
+                    label="export",
+                    data=st.session_state.last_content,
+                    file_name=export_file_name,
+                    mime="text/plain"
+                )
+        if st.session_state.kol_tweet_output:
+            with col4:
+                st.download_button(
+                    label="export",
+                    data=st.session_state.kol_tweet_output,
+                    file_name=export_file_name2,
+                    mime="text/plain"
+                )
+    elif st.session_state.kol_tweet_output and len(st.session_state.kol_tweet_output) > 50:
+        col3, col4,col34 = st.columns(3)
+        if st.session_state.last_content:
+            with col3:
+                st.download_button(
+                    label="export",
+                    data=st.session_state.last_content,
+                    file_name=export_file_name,
+                    mime="text/plain"
+                )
+        if st.session_state.kol_tweet_output:
+            with col4:
+                st.download_button(
+                    label="export",
+                    data=st.session_state.kol_tweet_output,
+                    file_name=export_file_name2,
+                    mime="text/plain"
+                )
+        if st.session_state.final_kol_tweet_output:
+            with col34:
+                st.download_button(
+                    label="export",
+                    data=st.session_state.final_kol_tweet_output,
+                    file_name=export_file_name3,
+                    mime="text/plain"
+                )
+if st.session_state.last_content:
     with display_container3:
         st.write('token length = '+ str(token_num))
 
-prompt = st.chat_input("please input prompt")
-
-if prompt:
-    if not project_options:
-        st.info("please select project.")
-        st.stop()
-    if not options:
-        st.info("please select twitter.")
-        st.stop()
-    if not custom_openai_api_key :
-        st.info("Please add your OpenAI API key ")
-        st.stop()
-    delta = abs(end_datetime - start_datetime)
-    
-    if delta <= timedelta(days=3) :
-        
-        with st.spinner("processing..."):
-            data = get_tweet_by_time()
-            total_result = summarize_tweet_text(data,prompt,chat)
-            if total_result:
-                st.session_state['kol_tweet_output'] = total_result
-
-            content = 'no data'
-            # 根据twitter 和 日期查询推文
-            # with st.container(height=500):
-            if data:
-                content = data
-                # st.session_state['last_content'] = ''
-                display_container.empty()
-            st.session_state['last_content'] = content
-            token_num = num_tokens_from_string(content, "cl100k_base")
-            export_file_name = str(uuid.uuid4())+"_twitter.txt"
-            export_file_name2 = str(uuid.uuid4())+"_twitter.txt"
-            # display_container.empty()
-            with display_container0:
-                col15, col16 = st.columns(2)
-                with col15:
-                    st.markdown(''':rainbow[tweet content]''')
-                with col16:
-                    st.markdown(''':rainbow[tweet summrize result]''')
-
-            
-            with display_container:
-                col8, col9 = st.columns(2)
-                with col8:
-                    with st.container(height=500):
-                        st.code(truncate_string(content))
-                with col9:
-                    with st.container(height=500):
-                        st.code(total_result)
-
-            with display_container2:
-                col10, col11 = st.columns(2)
-                with col10:
-                    if content:
-                        st.download_button(
-                            label="export",
-                            data=content,
-                            file_name=export_file_name,
-                            mime="text/plain"
-                        )
-                with col11:
-                    if content:
-                        st.download_button(
-                            label="export",
-                            data=total_result,
-                            file_name=export_file_name2,
-                            mime="text/plain"
-                        )                
-            with display_container3:
-                st.write('token length = '+ str(token_num))
-
-    else :
-        st.info("The date interval is more than 3 days.")
-        st.stop()

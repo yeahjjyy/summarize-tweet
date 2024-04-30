@@ -132,11 +132,11 @@ def summarize_tweet_text(tweets_text:str,prompt:str,chat):
                         print('执行时间间隔=', time_diff_seconds)
 
                         tweets_list.clear()
-                        tweets_list.append(tweets)
-            print('已经到底了')
+                        # tweets_list.append(tweets)
+            print('已经到底了2')
             break
         if not tweets:
-            print('已经到底了')
+            print('已经到底了3')
             break
         tweets_list.insert(0, tweets)
         total_token = num_tokens_from_prompt(tweets_list, "cl100k_base",prompt)
