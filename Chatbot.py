@@ -15,11 +15,10 @@ from streamlit_tags import st_tags, st_tags_sidebar
 
 from param_summarize_tweet import summarize_every_kol_tweets, summarize_tweet_text
 
-os.environ["LANGCHAIN_TRACING_V2"] = 'true'
-os.environ["LANGCHAIN_ENDPOINT"] = 'https://api.smith.langchain.com'
-os.environ["LANGCHAIN_PROJECT"] = st.secrets["LANGCHAIN_PROJECT"]
-os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
-
+# os.environ["LANGCHAIN_TRACING_V2"] = 'true'
+# os.environ["LANGCHAIN_ENDPOINT"] = 'https://api.smith.langchain.com'
+# os.environ["LANGCHAIN_PROJECT"] = st.secrets["LANGCHAIN_PROJECT"]
+# os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
 hide_st_style="""
 <style>
 #MainMenu {visibility: hidden;}
@@ -34,7 +33,6 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
-
     )
 
     return engine
@@ -436,9 +434,9 @@ with display_container:
                 st.code(st.session_state.final_kol_tweet_output)
 with display_container4:
 
-    if not st.session_state.last_content and len(st.session_state.last_content) < 100:
+    if not st.session_state.last_content or len(st.session_state.last_content) < 100:
         st.button("get tweet data", type="primary", on_click=button_click2)
-    elif st.session_state.last_content and len(st.session_state.last_content) > 100 and (not st.session_state.kol_tweet_output or len(st.session_state.kol_tweet_output) <= 50):
+    elif st.session_state.last_content and len(st.session_state.last_content) >= 100 and (not st.session_state.kol_tweet_output or len(st.session_state.kol_tweet_output) <= 50):
         col20, col21 = st.columns(2)
         with col20:
             st.button("get tweet data", type="primary", on_click=button_click2)
