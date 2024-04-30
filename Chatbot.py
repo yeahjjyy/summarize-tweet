@@ -19,6 +19,7 @@ os.environ["LANGCHAIN_TRACING_V2"] = 'true'
 os.environ["LANGCHAIN_ENDPOINT"] = 'https://api.smith.langchain.com'
 os.environ["LANGCHAIN_PROJECT"] = st.secrets["LANGCHAIN_PROJECT"]
 os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
+
 hide_st_style="""
 <style>
 #MainMenu {visibility: hidden;}
@@ -33,6 +34,7 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
+
     )
 
     return engine
@@ -169,6 +171,23 @@ with st.sidebar:
     )
     content_length_limit = st.number_input("Enter length", min_value=0, max_value=10000, step=1,help='The minimum length of tweet content. Only tweets exceeding this length will be returned.')
 
+
+    # col32, col33 = st.columns(2)
+
+    # # 使用两个st.time_input获取时间范围
+    # with col32:
+    #     like_count = st.number_input("Enter like count", min_value=0, max_value=1000000000, step=1,help='The minimum like count of tweet. Only tweets exceeding this count will be returned.')
+    # with col33:
+    #     quote_count = st.number_input("Enter quote count", min_value=0, max_value=1000000000, step=1,help='The minimum quote count of tweet. Only tweets exceeding this count will be returned.')
+    
+    # col34, col35 = st.columns(2)
+
+    # # 使用两个st.time_input获取时间范围
+    # with col34:
+    #     reply_count = st.number_input("Enter reply count", min_value=0, max_value=1000000000, step=1,help='The minimum reply count of tweet. Only tweets exceeding this count will be returned.')
+    # with col35:
+    #     retweet_count = st.number_input("Enter retweet count", min_value=0, max_value=1000000000, step=1,help='The minimum retweet count of tweet. Only tweets exceeding this count will be returned.')
+
     show_fields = st.multiselect(
     'Please select one or more fields',
     ['author','timestamp','source link','tweet content'],
@@ -264,7 +283,16 @@ tweet content: {row[2]} {row[4]}
 -------
 '''
 
-
+# def generate_sql(sql):
+#     if like_count:
+#         sql = sql.concat(" AND like_count > :like_count")
+#     if reply_count:
+#         sql = sql.concat(" AND reply_count > :reply_count")
+#     if quote_count:
+#         sql = sql.concat(" AND quote_count > :quote_count")
+#     if retweet_count:
+#         sql = sql.concat(" AND retweet_count > :retweet_count")
+#     return sql
 
 def get_tweet_by_time(is_continue):
     
@@ -282,13 +310,15 @@ def get_tweet_by_time(is_continue):
         else:
             influencer_ids = ", ".join(f"'{elem}'" for elem in options)
             sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+        # sql = generate_sql(sql)
+        
         result = conn.execute(sql)
         for row in result:
             # 判断长度
             if len(str({row[2]})+str({row[4]})) < content_length_limit and content_length_limit > 0:
                 continue
             # 判断是否包含某个字符
-            if key_words and not contains_any_efficient((str({row[2]})+str({row[4]})),key_words):
+            if key_words and not contains_any_efficient((str({row[1]})+str({row[2]})+str({row[4]})),key_words):
                 continue
             tweet = get_return_tweet(show_fields,row)
 #             tweet = f'''author: {row[1]} 
