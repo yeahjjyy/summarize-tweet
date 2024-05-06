@@ -19,7 +19,6 @@ os.environ["LANGCHAIN_TRACING_V2"] = 'true'
 os.environ["LANGCHAIN_ENDPOINT"] = 'https://api.smith.langchain.com'
 os.environ["LANGCHAIN_PROJECT"] = st.secrets["LANGCHAIN_PROJECT"]
 os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
-
 hide_st_style="""
 <style>
 #MainMenu {visibility: hidden;}
@@ -34,7 +33,6 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
-
     )
 
     return engine
@@ -224,62 +222,62 @@ def get_return_tweet(select_return_fields,row):
         return f'''author: {row[1]} 
 timestamp: {row[3]} 
 source link: {row[0]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     if all_elements_in_another(select_return_fields, ['author','timestamp']) or all_elements_in_another(select_return_fields, ['author','timestamp','tweet content']):
         return f'''author: {row[1]} 
 timestamp: {row[3]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['author','source link','tweet content']):
         return f'''author: {row[1]} 
 source link: {row[0]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['timestamp','source link','tweet content']) or all_elements_in_another(select_return_fields, ['timestamp','source link']):
         return f'''timestamp: {row[3]} 
 source link: {row[0]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['author','source link']):
         return f'''author: {row[1]} 
 source link: {row[0]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''} 
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['author','tweet content']):
         return f'''author: {row[1]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['tweet content']):
-        return f'''tweet content: {row[2]} {row[4]} 
+        return f'''tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['author']):
         return f'''author: {row[1]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['source link']):
         return f'''source link: {row[0]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     elif all_elements_in_another(select_return_fields, ['timestamp']):
         return f'''timestamp: {row[3]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
     else:
         return f'''author: {row[1]} 
 timestamp: {row[3]} 
 source link: {row[0]} 
-tweet content: {row[2]} {row[4]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
 -------
 '''
 
