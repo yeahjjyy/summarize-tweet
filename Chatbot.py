@@ -1,5 +1,6 @@
 
 import os
+import re
 import uuid
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
@@ -33,6 +34,7 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
+
     )
 
     return engine
@@ -208,9 +210,12 @@ def contains_any_efficient(string, char_list):
     for item in char_list:
         # 将列表中的字符或子字符串转换为小写，以便不区分大小写进行比较
         item_lower = item.lower()
+        pattern = r'\b{}\b'.format(re.escape(item_lower))
         # 检查小写形式的字符串是否在小写形式的原始字符串中
-        if item_lower in string_lower:
+        if re.search(pattern, string_lower, re.IGNORECASE):
             return True
+        # if item_lower in string_lower:
+        #     return True
     return False
 
 def all_elements_in_another(list1, list2):
