@@ -34,7 +34,6 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
-
     )
 
     return engine
@@ -162,7 +161,9 @@ with st.sidebar:
         'Please select one or more twitter',
         st.session_state.selection_output,
         )
-
+    filter_option = st.selectbox(
+    "Please select YES or NO filter",
+    ("YES", "NO"))
     key_words = st_tags_sidebar(
         label='Enter Keywords tag:',
         text='Press enter to add tweet keywords tag',
@@ -309,10 +310,17 @@ def get_tweet_by_time(is_continue):
     with engine.connect() as conn:
         if 'all' in options:
             influencer_ids = ", ".join(f"'{elem}'" for elem in st.session_state.selection_output)
-            sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+            if filter_option == 'YES':
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+            else:
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids})  and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+
         else:
             influencer_ids = ", ".join(f"'{elem}'" for elem in options)
-            sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+            if filter_option == 'YES': 
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+            else:
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
         # sql = generate_sql(sql)
         
         result = conn.execute(sql)
