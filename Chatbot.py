@@ -35,7 +35,6 @@ def get_engine():
     engine = create_engine(
         st.secrets["url"]
     )
-
     return engine
 
 # @st.cache_data(ttl=60)
