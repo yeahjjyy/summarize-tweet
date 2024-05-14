@@ -90,7 +90,7 @@ async def summarize_tweet_text_by_token(tweets_text:str,prompt:str,chat):
         tweets_list.append(tweets_dict)
 
     # 按照作者分组
-    tweets_list.sort(key=lambda x: x["author"])  # 首先按照作者排序
+    # tweets_list.sort(key=lambda x: x["author"])  # 首先按照作者排序
     grouped_tweets = {key: list(group) for key, group in groupby(tweets_list, key=lambda x: x["author"])}
     author_str = ''
     authors = []
