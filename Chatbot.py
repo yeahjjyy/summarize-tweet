@@ -631,7 +631,7 @@ if st.session_state.kol_tweet_output and len(st.session_state.kol_tweet_output) 
     with st.container(height=500):
         st.code(st.session_state.kol_tweet_output)
     with st.container(height=80):
-        st.chat_input(placeholder="please input prompt",on_submit=prompt_summit,key="prompt")
+        st.chat_input(placeholder="please input prompt",on_submit=prompt_summit_2,key="prompt")
     st.download_button(
         label="export",
         data=st.session_state.kol_tweet_output,
