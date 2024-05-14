@@ -1,3 +1,4 @@
+from itertools import groupby
 import random
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -71,6 +72,107 @@ def summarize_every_kol_tweets(tweets: str,custom_prompt:str,chat):
         return num_tokens, None
 
 
+async def summarize_tweet_text_by_token(tweets_text:str,prompt:str,chat):
+    # Split the string into individual tweets
+    individual_tweets = tweets_text.strip().split('-------\n')    
+
+    tweets_list = []
+    # Iterate through each tweet and group by author
+    for tweet in individual_tweets:
+        tweet_lines = tweet.strip().split('\n')
+        author = tweet_lines[0]
+        timestamp = tweet_lines[1]
+        tweets_dict = {
+            "author":author,
+            "timestamp":timestamp,
+            "content":(tweet+'-------')
+        }
+        tweets_list.append(tweets_dict)
+
+    # 按照作者分组
+    tweets_list.sort(key=lambda x: x["author"])  # 首先按照作者排序
+    grouped_tweets = {key: list(group) for key, group in groupby(tweets_list, key=lambda x: x["author"])}
+    author_str = ''
+    authors = []
+    total_token_num = 0
+
+    authors_content = []
+    # 输出分组后的结果
+    for author, tweets in grouped_tweets.items():
+        author_token_num = 0
+        for s in tweets:
+            tweet_s = f'''{s['content']}'''
+            encoding = tiktoken.get_encoding("cl100k_base")
+            num_tokens = len(encoding.encode(tweet_s))
+            author_token_num += num_tokens
+            print('author_token_num = ', author_token_num)
+
+        total_token_num += author_token_num
+        print('total_token_num = ', total_token_num)
+
+        if total_token_num > 10000:
+            if not authors:
+                authors.append(tweets)
+                tweets = None
+            # 生成tweets
+
+
+            for author_tweet in authors:
+                author_tweet.sort(key=lambda x: x["timestamp"], reverse=True)
+                for tweet in author_tweet:
+                    tweet_str = f'''{tweet['content']}'''
+                    author_str += (tweet_str+'----------\n') 
+            author_str = f'''
+{{
+{author_str}
+}}
+'''
+            authors_content.append(author_str)
+            authors.clear()
+            if tweets:
+                authors.append(tweets)
+            total_token_num = 0
+            total_token_num += author_token_num
+            author_str = ''
+        else:
+            authors.append(tweets)
+    if authors:
+        for author_tweet in authors:
+            author_tweet.sort(key=lambda x: x["timestamp"], reverse=True)
+            for tweet in author_tweet:
+                tweet_str = f'''{tweet['content']}'''
+                author_str += (tweet_str+'----------\n')
+        author_str = f'''
+{{
+{author_str}
+}}
+'''
+        authors_content.append(author_str)
+        authors.clear()
+        authors.append(tweets)
+        total_token_num = 0
+        author_str = ''
+    
+    query_list = []
+    
+    for d in authors_content:
+        query = []
+        query.append(HumanMessage(content=prompt + d))
+        query_list.append(query)
+    
+    response = await chat.agenerate(query_list,tags=['streamlit-summarize-tweets'])
+    parsed_message_list = []
+    for generation in enumerate(response.generations):
+        parsed_message_list.append(generation[1][0].text)
+    gpt_result_str = ''
+    for gpt_str in parsed_message_list:
+        if gpt_str != '{"output": "N.A"}':
+            gpt_result_str += (gpt_str + '\n')
+    print('gpt_result_str=',gpt_result_str)
+
+
+    st.session_state['total_result'] = gpt_result_str
+
 def summarize_tweet_text(tweets_text:str,prompt:str,chat):
     # 创建锁对象
     lock = threading.Lock()
@@ -140,7 +242,7 @@ def summarize_tweet_text(tweets_text:str,prompt:str,chat):
             break
         tweets_list.insert(0, tweets)
         total_token = num_tokens_from_prompt(tweets_list, "cl100k_base",prompt)
-        if total_token > 20000:
+        if total_token > 200000:
             tweets_list.remove(tweets)
 
             futures = []

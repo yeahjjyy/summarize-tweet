@@ -1,4 +1,5 @@
 
+import asyncio
 import os
 import re
 import uuid
@@ -14,7 +15,7 @@ import datetime
 from datetime import timedelta
 from streamlit_tags import st_tags, st_tags_sidebar
 
-from param_summarize_tweet import summarize_every_kol_tweets, summarize_tweet_text
+from param_summarize_tweet import summarize_every_kol_tweets, summarize_tweet_text, summarize_tweet_text_by_token
 
 os.environ["LANGCHAIN_TRACING_V2"] = 'true'
 os.environ["LANGCHAIN_ENDPOINT"] = 'https://api.smith.langchain.com'
@@ -34,6 +35,7 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
+
     )
     return engine
 
@@ -397,6 +399,22 @@ def button_click2():
     st.session_state['last_content'] = content
 
 
+def prompt_summit_2():
+
+    if not custom_openai_api_key :
+        st.session_state["kol_tweet_output"]="Please add your OpenAI API key "
+    else:
+        with st.spinner("processing..."):
+            asyncio.run(summarize_tweet_text_by_token(st.session_state.last_content,st.session_state.prompt,chat))
+
+            # data = get_tweet_by_time(None)
+            if st.session_state.last_content and len(st.session_state.last_content) > 200:
+                # total_result = summarize_tweet_text(st.session_state.last_content,st.session_state.prompt,chat)
+                # print('total_result=',total_result)
+                if st.session_state.total_result:
+                    st.session_state['kol_tweet_output'] = st.session_state.total_result
+                else:
+                    st.session_state['kol_tweet_output'] = 'no data'
 
 
 def prompt_summit():
@@ -581,7 +599,7 @@ if st.session_state.last_content and len(st.session_state.last_content) >= 100 a
     with st.container(height=500):
         st.code(st.session_state.kol_tweet_output)
     with st.container(height=80):
-        st.chat_input(placeholder="please input prompt",on_submit=prompt_summit,key="prompt")
+        st.chat_input(placeholder="please input prompt",on_submit=prompt_summit_2,key="prompt")
     st.download_button(
         label="export",
         data=st.session_state.kol_tweet_output,
