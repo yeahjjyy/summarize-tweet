@@ -107,7 +107,7 @@ with st.sidebar:
     if selected_option == 'anthropic':
         model_selected_option = st.selectbox('请选择一个模型', ['claude-3-opus-20240229', 'claude-3-sonnet-20240229','claude-3-haiku-20240307'])
     else:
-        model_selected_option = st.selectbox('请选择一个模型', ['gpt-4-0125-preview', 'gpt-4-turbo','gpt-3.5-turbo-0125'])
+        model_selected_option = st.selectbox('请选择一个模型', ['gpt-4o','gpt-4-0125-preview', 'gpt-4-turbo','gpt-3.5-turbo-0125'])
     custom_openai_api_key = st.text_input("API Key", key="chatbot_api_key", type="password")
 
     if 'selected_projects' not in st.session_state:
@@ -169,7 +169,7 @@ with st.sidebar:
         label='Enter Keywords tag:',
         text='Press enter to add tweet keywords tag',
         suggestions=['btc'],
-        maxtags = 5
+        maxtags = 100
     )
     content_length_limit = st.number_input("Enter length", min_value=0, max_value=10000, step=1,help='The minimum length of tweet content. Only tweets exceeding this length will be returned.')
 
@@ -199,9 +199,9 @@ with st.sidebar:
 if custom_openai_api_key:
     if selected_option=='anthropic':
         chat = ChatAnthropic(
-            anthropic_api_key=custom_openai_api_key,model_name=model_selected_option)
+            anthropic_api_key=custom_openai_api_key,model_name=model_selected_option,temperature=1)
     else:
-        chat = ChatOpenAI(openai_api_key=custom_openai_api_key, model_name=model_selected_option)
+        chat = ChatOpenAI(openai_api_key=custom_openai_api_key, model_name=model_selected_option,temperature=1)
         
 
 def contains_any_efficient(string, char_list):
