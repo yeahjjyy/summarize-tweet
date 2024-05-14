@@ -312,19 +312,23 @@ def get_tweet_by_time(is_continue):
         if 'all' in options:
             influencer_ids = ", ".join(f"'{elem}'" for elem in st.session_state.selection_output)
             if filter_option == 'YES':
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
             else:
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids})  and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids})  and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
 
         else:
             influencer_ids = ", ".join(f"'{elem}'" for elem in options)
             if filter_option == 'YES': 
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
             else:
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc")
         # sql = generate_sql(sql)
         
         result = conn.execute(sql)
+
+
+        #根据作者排序，然后再根据时间排序
+
         for row in result:
             # 判断长度
             if len(str({row[2]})+str({row[4]})) < content_length_limit and content_length_limit > 0:

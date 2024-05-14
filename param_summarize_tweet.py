@@ -165,9 +165,12 @@ async def summarize_tweet_text_by_token(tweets_text:str,prompt:str,chat):
     for generation in enumerate(response.generations):
         parsed_message_list.append(generation[1][0].text)
     gpt_result_str = ''
+    s  = '''```json
+{"output": "N.A"}
+```'''
     for gpt_str in parsed_message_list:
-        if gpt_str != '{"output": "N.A"}':
-            gpt_result_str += (gpt_str + '\n')
+        if gpt_str != '{"output": "N.A"}' and gpt_str != s:
+            gpt_result_str += (gpt_str + '--------------\n')
     print('gpt_result_str=',gpt_result_str)
 
 
