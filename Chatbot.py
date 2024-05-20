@@ -383,8 +383,8 @@ def button_click2():
         elif not options:
             is_continue = "please select twitter."
         
-        elif abs(end_datetime - start_datetime) > timedelta(days=3) :
-            is_continue = "The date interval is more than 3 days."
+        # elif abs(end_datetime - start_datetime) > timedelta(days=3) :
+        #     is_continue = "The date interval is more than 3 days."
 
     except NameError as e:
         is_continue = "please select start_time and end_time."
