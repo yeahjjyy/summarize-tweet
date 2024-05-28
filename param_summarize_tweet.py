@@ -72,24 +72,77 @@ def summarize_every_kol_tweets(tweets: str,custom_prompt:str,chat):
         return num_tokens, None
 
 
-async def summarize_tweet_text_by_token(tweets_text:str,prompt:str,chat):
+async def get_return_tweet_v2(select_return_fields, row):
+
+    if not select_return_fields:
+        return f'''author: {row['author']} 
+timestamp: {row['timestamp']} 
+source link: {row['source link']} 
+tweet content: {row['content']}
+statics: likeCount {row['like_count']} replyCount {row['reply_count']} quoteCount {row['quote_count']} retweetCount {row['retweet_count']} 
+hot: {row['hot']}
+'''
+    desired_order = ['author', 'timestamp', 'source link', 'tweet content', 'statics', 'hot']
+    # 创建一个字典来存储每个元素的排序顺序
+    order_dict = {key: index for index, key in enumerate(desired_order)}
+
+    # 使用sorted()函数和自定义的排序键来对数组进行排序
+    sorted_array = sorted(select_return_fields, key=lambda x: order_dict[x])
+    output = ''
+    # 遍历 original_array 中的每个元素，并根据元素内容构建输出字符串
+    for item in sorted_array:
+        if item == 'author':
+            output += f'author: {row["author"]}\n'
+        elif item == 'timestamp':
+            output += f'timestamp: {row["timestamp"]}\n'
+        elif item == 'source link':
+            output += f'source link: {row["source link"]}\n'
+        elif item == 'tweet content':
+            output += f'tweet content: {row["content"]}\n'
+        elif item == 'statics':
+            output += f'statics: likeCount {row["like_count"]} replyCount {row["reply_count"]} quoteCount {row["quote_count"]} retweetCount {row["retweet_count"]}\n'
+        elif item == 'hot':
+            output += f'hot: {row["hot"]}\n'
+
+    # 添加分隔符
+    # output += "-------\n"
+    return output
+
+
+
+async def format_str(tweet:{}):
+    result = f'''author: {tweet['author']}
+timestamp: {tweet['timestamp']}
+source link: {tweet['source link']}
+tweet content: {tweet['content']}
+'''
+    return result
+
+
+
+async def summarize_tweet_text_by_token(data_tweets_list:list,prompt:str,chat,show_fields:list):
     # Split the string into individual tweets
-    individual_tweets = tweets_text.strip().split('-------\n')    
+    # individual_tweets = tweets_text.strip().split('-------\n')    
 
     tweets_list = []
-    # Iterate through each tweet and group by author
-    for tweet in individual_tweets:
-        tweet_lines = tweet.strip().split('\n')
-        if len(tweet_lines) <2:
-            continue
-        author = tweet_lines[0]
-        timestamp = tweet_lines[1]
+    # # Iterate through each tweet and group by author
+    for tweet in data_tweets_list:
+        # tweet_lines = tweet.strip().split('\n')
+        # if len(tweet_lines) <2:
+        #     continue
+        # author = tweet_lines[0]
+        # timestamp = tweet_lines[1]
+        author = tweet['author']
+        timestamp = tweet['timestamp']
         tweets_dict = {
             "author":author,
             "timestamp":timestamp,
-            "content":(tweet+'-------')
+            "content":await get_return_tweet_v2(show_fields,tweet)
         }
         tweets_list.append(tweets_dict)
+
+
+
 
     # 按照作者分组
     # tweets_list.sort(key=lambda x: x["author"])  # 首先按照作者排序
@@ -107,7 +160,6 @@ async def summarize_tweet_text_by_token(tweets_text:str,prompt:str,chat):
             encoding = tiktoken.get_encoding("cl100k_base")
             num_tokens = len(encoding.encode(tweet_s))
             author_token_num += num_tokens
-            print('author_token_num = ', author_token_num)
 
         total_token_num += author_token_num
         print('total_token_num = ', total_token_num)
