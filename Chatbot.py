@@ -192,7 +192,7 @@ with st.sidebar:
 
     show_fields = st.multiselect(
     'Please select one or more fields',
-    ['author','timestamp','source link','tweet content'],
+    ['author','timestamp','source link','tweet content','statics', 'hot'],
     )
 
 
@@ -214,6 +214,7 @@ def contains_any_efficient(string, char_list):
         item_lower = item.lower()
         # pattern = r'\b{}\b'.format(re.escape(item_lower))
         pattern = r'(?<!\w){}(?!\w)'.format(re.escape(item_lower))
+
         # 检查小写形式的字符串是否在小写形式的原始字符串中
         if re.search(pattern, string_lower, re.IGNORECASE):
             return True
@@ -224,6 +225,45 @@ def contains_any_efficient(string, char_list):
 def all_elements_in_another(list1, list2):
     """检查 list1 的所有元素是否都在 list2 中"""
     return set(list2).issubset(set(list1))
+
+def get_return_tweet_v2(select_return_fields, row, hot,
+                                likeCount, replyCount, quoteCount, retweetCount):
+
+    if not select_return_fields:
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4] if row[4] else ''}
+statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount} 
+hot: {hot if hot > 0 else 'NA'}
+-------
+'''
+    desired_order = ['author', 'timestamp', 'source link', 'tweet content', 'statics', 'hot']
+    # 创建一个字典来存储每个元素的排序顺序
+    order_dict = {key: index for index, key in enumerate(desired_order)}
+
+    # 使用sorted()函数和自定义的排序键来对数组进行排序
+    sorted_array = sorted(select_return_fields, key=lambda x: order_dict[x])
+    output = ''
+    # 遍历 original_array 中的每个元素，并根据元素内容构建输出字符串
+    for item in sorted_array:
+        if item == 'author':
+            output += f'author: {row[1]}\n'
+        elif item == 'timestamp':
+            output += f'timestamp: {row[3]}\n'
+        elif item == 'source link':
+            output += f'source link: {row[0]}\n'
+        elif item == 'tweet content':
+            output += f'tweet content: {row[2]} {row[4] if row[4] else ""}\n'
+        elif item == 'statics':
+            output += f'statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount}\n'
+        elif item == 'hot':
+            output += f'hot: {hot if hot > 0 else "NA"}\n'
+
+    # 添加分隔符
+    output += "-------\n"
+    return output
+
 
 def get_return_tweet(select_return_fields,row):
     if not select_return_fields:
@@ -313,16 +353,16 @@ def get_tweet_by_time(is_continue):
         if 'all' in options:
             influencer_ids = ", ".join(f"'{elem}'" for elem in st.session_state.selection_output)
             if filter_option == 'YES':
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content   where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
             else:
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content   where influencer_id in ({influencer_ids})  and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content   where influencer_id in ({influencer_ids})  and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
 
         else:
             influencer_ids = ", ".join(f"'{elem}'" for elem in options)
             if filter_option == 'YES': 
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content  where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc ")
             else:
-                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc")
+                sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}' order by influencer_id asc, publish_time_ts desc")
         # sql = generate_sql(sql)
         
         result = conn.execute(sql)
@@ -337,7 +377,30 @@ def get_tweet_by_time(is_continue):
             # 判断是否包含某个字符
             if key_words and not contains_any_efficient((str({row[1]})+str({row[2]})+str({row[4]})),key_words):
                 continue
-            tweet = get_return_tweet(show_fields,row)
+
+            hot = 0
+            likeCount = row[5]
+            if not likeCount:
+                likeCount = 'NA'
+            else:
+                hot += likeCount
+            replyCount = row[6]
+            if not replyCount:
+                replyCount = 'NA'
+            else:
+                hot += replyCount
+            quoteCount = row[7]
+            if not quoteCount:
+                quoteCount = 'NA'
+            else:
+                hot += quoteCount
+            retweetCount = row[8]
+            if not retweetCount:
+                retweetCount = 'NA'
+            else:
+                hot += retweetCount
+            tweet = get_return_tweet_v2(show_fields, row, hot, likeCount, replyCount, quoteCount, retweetCount)
+            # tweet = get_return_tweet(show_fields,row)
 #             tweet = f'''author: {row[1]} 
 # timestamp: {row[3]} 
 # source link: {row[0]} 
@@ -404,13 +467,81 @@ def button_click2():
     st.session_state['last_content'] = content
 
 
+
+def get_tweets(start_date: str, end_date: str, twitter_username_list: list, keywords_list: list,
+                   limit_len: int):
+    # 查询所有的twitter博主
+    with get_engine().connect() as conn:
+        if 'all' in options:
+
+            # influencer_ids = ", ".join(f"'{elem}'" for elem in twitter_list)
+            sql = text(
+                f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content   where influencer_id in (select influencer_id from twitter_base_influencers where project_name_array && array['daliy_twitter','xinsight']) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_date)}' AND '{str(end_date)}' order by influencer_id asc, publish_time_ts desc ")
+
+        else:
+            influencer_ids = ", ".join(f"'{elem}'" for elem in options)
+
+            sql = text(
+                f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content  where influencer_id in ({influencer_ids}) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_date)}' AND '{str(end_date)}' order by influencer_id asc, publish_time_ts desc ")
+
+        result = conn.execute(sql)
+
+        # 根据作者排序，然后再根据时间排序
+        result_list = []
+        for row in result:
+            # 判断长度
+            if len(str({row[2]}) + str({row[4]})) < limit_len and limit_len > 0:
+                continue
+            # 判断是否包含某个字符
+            if keywords_list and not contains_any_efficient(
+                    (str({row[1]}) + ' ' + str({row[2]}) + ' ' + str({row[4]})), keywords_list):
+                continue
+            hot = 0
+            likeCount = row[5]
+            if not likeCount:
+                likeCount = 'NA'
+            else:
+                hot += likeCount
+            replyCount = row[6]
+            if not replyCount:
+                replyCount = 'NA'
+            else:
+                hot += replyCount
+            quoteCount = row[7]
+            if not quoteCount:
+                quoteCount = 'NA'
+            else:
+                hot += quoteCount
+            retweetCount = row[8]
+            if not retweetCount:
+                retweetCount = 'NA'
+            else:
+                hot += retweetCount
+            tweets_dict = {
+                "author": row[1],
+                "timestamp": row[3],
+                "source link": row[0],
+                "content": (str(row[2]) + str(row[4] if row[4] else '') ),
+                "like_count": likeCount,
+                "reply_count": replyCount,
+                "quote_count":quoteCount,
+                "retweet_count":retweetCount,
+                "hot":hot
+            }
+            result_list.append(tweets_dict)
+    return result_list
+
 def prompt_summit_2():
 
     if not custom_openai_api_key :
         st.session_state["kol_tweet_output"]="Please add your OpenAI API key "
     else:
         with st.spinner("processing..."):
-            asyncio.run(summarize_tweet_text_by_token(st.session_state.last_content,st.session_state.prompt,chat))
+
+            tweet_list = get_tweets(str(start_formatted_date),str(end_formatted_date),[],key_words,content_length_limit)
+            asyncio.run(summarize_tweet_text_by_token(tweet_list
+                                                      ,st.session_state.prompt,chat
+                                                      ,show_fields))
 
             # data = get_tweet_by_time(None)
             if st.session_state.last_content and len(st.session_state.last_content) > 200:
