@@ -369,7 +369,11 @@ def get_tweet_by_time(is_continue):
 
 
         #根据作者排序，然后再根据时间排序
-
+        if key_words and 'yeehagame_project' in key_words:
+            key_words.remove('yeehagame_project')
+            yeehagame_keywords = ['ETH', 'W', 'BTC', 'ENA', 'BLUR', 'PYTH', 'DYDX', 'NEAR', 'JUP', 'FIL', 'TIA', 'BCH', 'MATIC', 'ETC', 'DOGE', 'LTC', 'ADA', 'SOL', 'SEI', 'ARB', 'ID', 'OP', 'MANTA', 'USDT', 'DOT', 'INJ', 'ATOM', 'APT', 'SUI', 'AVAX', 'LINK', 'ORDI', 'XRP', 'BNB']
+            key_words = list(set(yeehagame_keywords + key_words))
+            print(key_words)
         for row in result:
             # 判断长度
             if len(str({row[2]})+str({row[4]})) < content_length_limit and content_length_limit > 0:
@@ -537,7 +541,11 @@ def prompt_summit_2():
         st.session_state["kol_tweet_output"]="Please add your OpenAI API key "
     else:
         with st.spinner("processing..."):
-
+            if key_words and 'yeehagame_project' in key_words:
+                key_words.remove('yeehagame_project')
+                yeehagame_keywords = ['ETH', 'W', 'BTC', 'ENA', 'BLUR', 'PYTH', 'DYDX', 'NEAR', 'JUP', 'FIL', 'TIA', 'BCH', 'MATIC', 'ETC', 'DOGE', 'LTC', 'ADA', 'SOL', 'SEI', 'ARB', 'ID', 'OP', 'MANTA', 'USDT', 'DOT', 'INJ', 'ATOM', 'APT', 'SUI', 'AVAX', 'LINK', 'ORDI', 'XRP', 'BNB']
+                key_words = list(set(yeehagame_keywords + key_words))
+                print(key_words)
             tweet_list = get_tweets(str(start_formatted_date),str(end_formatted_date),[],key_words,content_length_limit)
             asyncio.run(summarize_tweet_text_by_token(tweet_list
                                                       ,st.session_state.prompt,chat
