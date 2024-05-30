@@ -172,8 +172,8 @@ with st.sidebar:
         maxtags = 100
     )
     # 根据作者排序，然后再根据时间排序
-    if key_words and 'yeehagame_project' in key_words:
-        key_words.remove('yeehagame_project')
+    if key_words and 'dex_coins' in key_words:
+        key_words.remove('dex_coins')
         yeehagame_keywords = ['ETH', 'W', 'BTC', 'ENA', 'BLUR', 'PYTH', 'DYDX', 'NEAR', 'JUP', 'FIL', 'TIA', 'BCH',
                               'MATIC', 'ETC', 'DOGE', 'LTC', 'ADA', 'SOL', 'SEI', 'ARB', 'ID', 'OP', 'MANTA',
                               'USDT', 'DOT', 'INJ', 'ATOM', 'APT', 'SUI', 'AVAX', 'LINK', 'ORDI', 'XRP', 'BNB']
