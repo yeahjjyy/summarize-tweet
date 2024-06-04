@@ -62,9 +62,9 @@ def get_twitter(project_name_list):
                                 )
     query_project_twitter = select(twitter_base_influencers.c.twitter_username).where(twitter_base_influencers.c.project_name_array.op('&&')(project_name_list))
     with engine.connect() as conn:
-        if project_name_list and 'daliy_twitter' in project_name_list:
+        if project_name_list and 'core' in project_name_list:
             # query_twitter = select(twitter_base_content.c.influencer_id).group_by(twitter_base_content.c.influencer_id)
-            project_name_list = ['daliy_twitter','xinsight']
+            project_name_list = ['core']
             query_project_twitter = select(twitter_base_influencers.c.twitter_username).where(twitter_base_influencers.c.project_name_array.op('&&')(project_name_list))
 
             result = conn.execute(query_project_twitter)
@@ -115,8 +115,8 @@ with st.sidebar:
 
     project_options = st.multiselect(
     'Please select one or more project',
-    ['daliy_twitter','mantle'],
-    default=['daliy_twitter'],
+    ['core','mantle'],
+    default=['core'],
     key='selected_projects',
     on_change=get_all_twitter
     )
@@ -483,7 +483,7 @@ def get_tweets(start_date: str, end_date: str, twitter_username_list: list, keyw
 
             # influencer_ids = ", ".join(f"'{elem}'" for elem in twitter_list)
             sql = text(
-                f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content   where influencer_id in (select influencer_id from twitter_base_influencers where project_name_array && array['daliy_twitter','xinsight']) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_date)}' AND '{str(end_date)}' order by influencer_id asc, publish_time_ts desc ")
+                f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content   where influencer_id in (select influencer_id from twitter_base_influencers where project_name_array && array['core']) and trading_opportunity = 1 and publish_time_ts BETWEEN '{str(start_date)}' AND '{str(end_date)}' order by influencer_id asc, publish_time_ts desc ")
 
         else:
             influencer_ids = ", ".join(f"'{elem}'" for elem in options)
