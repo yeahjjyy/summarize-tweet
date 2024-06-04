@@ -240,9 +240,9 @@ def get_return_tweet_v2(select_return_fields, row, hot,
                                 likeCount, replyCount, quoteCount, retweetCount):
 
     if not select_return_fields:
-        return f'''author: {row[1]} 
-timestamp: {row[3]} 
-source link: {row[0]} 
+        return f'''author: {row[1]}
+timestamp: {row[3]}
+source link: {row[0]}
 tweet content: {row[2]} {row[4] if row[4] else ''}
 statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount}
 hot: {hot if hot > 0 else 'NA'}
