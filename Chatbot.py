@@ -382,7 +382,7 @@ def get_tweet_by_time(is_continue):
             if len(str({row[2]})+str({row[4]})) < content_length_limit and content_length_limit > 0:
                 continue
             # 判断是否包含某个字符
-            if key_words and not contains_any_efficient((str({row[1]})+str({row[2]})+str({row[4]})),key_words):
+            if key_words and not contains_any_efficient(str(row[1]) + ' ' + str(row[2]) + ' ' + str(row[4]),key_words):
                 continue
 
             hot = 0
